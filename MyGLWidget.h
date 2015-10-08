@@ -22,6 +22,10 @@ class MyGLWidget : public QGLWidget {
     virtual void resizeGL (int width, int height);
     // keyPressEvent - Es cridat quan es prem una tecla
     virtual void keyPressEvent (QKeyEvent *event);
+    //Función que define la proyección
+    virtual void projectTransform();
+    //Función que define la viw matrix
+    virtual void viewTransform();
 
   private:
     void createBuffers ();
@@ -32,6 +36,8 @@ class MyGLWidget : public QGLWidget {
     GLuint vertexLoc, colorLoc;
     // uniform locations
     GLuint transLoc;
+    GLuint projLoc;
+    GLuint viewLoc;
     // VAO i VBO names
     GLuint VAO_Casa, VBO_CasaPos, VBO_CasaCol;
     GLuint VAO_Terra, VBO_TerraPos, VBO_TerraCol;

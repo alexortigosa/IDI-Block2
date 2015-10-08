@@ -9,35 +9,53 @@ MyGLWidget::MyGLWidget (QGLFormat &f, QWidget* parent) : QGLWidget(f, parent)
   scale = 1.0f;
 }
 
+void MyGLWidget::projectTransform()
+{
+    
+    glm::mat4 Proj = glm::perspective(M_PI/2.0,1.0,1.0,3.0);
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, &Proj[0][0]);
+}
+
+void MyGLWidget::viewTransform()
+{
+    
+    glm::mat4 View = glm::lookAt(glm::vec3(0.0,0.0,2.0),glm::vec3(0.0,0.0,0.0),glm::vec3(0.0,1.0,0.0));
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &View[0][0]);
+}
+
 void MyGLWidget::initializeGL () 
 {
   // glew és necessari per cridar funcions de les darreres versions d'OpenGL
   glewExperimental = GL_TRUE;
   glewInit(); 
   glGetError();  // Reinicia la variable d'error d'OpenGL
-
+  glEnable(GL_DEPTH_TEST);
   glClearColor(0.5, 0.7, 1.0, 1.0); // defineix color de fons (d'esborrat)
   carregaShaders();
   createBuffers();
   modelTransform ();
+  projectTransform();
+  viewTransform();
 }
 
 void MyGLWidget::paintGL () 
 {
   // Esborrem el frame-buffer
-  glClear (GL_COLOR_BUFFER_BIT);
+  glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  
+  // Activem el VAO per a pintar la caseta 
+  glBindVertexArray (VAO_Casa);
+
+  // pintem
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 5);
+  
   // Activem el VAO per a pintar el terra 
   glBindVertexArray (VAO_Terra);
 
   // pintem
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-  // Activem el VAO per a pintar la caseta 
-  glBindVertexArray (VAO_Casa);
-
-  // pintem
-  glDrawArrays(GL_TRIANGLE_STRIP, 0, 5);
 
   glBindVertexArray (0);
 }
@@ -177,5 +195,7 @@ void MyGLWidget::carregaShaders()
   colorLoc = glGetAttribLocation (program->programId(), "color");
   // Uniform locations
   transLoc = glGetUniformLocation(program->programId(), "TG");
+  projLoc = glGetUniformLocation(program->programId(), "proj");
+  viewLoc = glGetUniformLocation(program->programId(), "view");
 }
 
