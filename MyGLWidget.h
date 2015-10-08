@@ -26,6 +26,9 @@ class MyGLWidget : public QGLWidget {
     virtual void projectTransform();
     //Función que define la viw matrix
     virtual void viewTransform();
+    //carrega model
+    virtual void carregaModel();
+    
 
   private:
     void createBuffers ();
@@ -41,10 +44,14 @@ class MyGLWidget : public QGLWidget {
     // VAO i VBO names
     GLuint VAO_Casa, VBO_CasaPos, VBO_CasaCol;
     GLuint VAO_Terra, VBO_TerraPos, VBO_TerraCol;
+    GLuint VAO_Model;
+    
     // Program
     QGLShaderProgram *program;
     // Internal vars
     float scale;
     glm::vec3 pos;
+    //Modelo
+    Model m;
 };
 

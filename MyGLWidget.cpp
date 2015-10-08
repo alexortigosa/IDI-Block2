@@ -23,6 +23,12 @@ void MyGLWidget::viewTransform()
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &View[0][0]);
 }
 
+void MyGLWidget::carregaModel()
+{
+    
+    m.load("./models/HomerProves.obj");
+}
+
 void MyGLWidget::initializeGL () 
 {
   // glew és necessari per cridar funcions de les darreres versions d'OpenGL
@@ -31,6 +37,7 @@ void MyGLWidget::initializeGL ()
   glGetError();  // Reinicia la variable d'error d'OpenGL
   glEnable(GL_DEPTH_TEST);
   glClearColor(0.5, 0.7, 1.0, 1.0); // defineix color de fons (d'esborrat)
+  carregaModel();
   carregaShaders();
   createBuffers();
   modelTransform ();
@@ -96,7 +103,7 @@ void MyGLWidget::keyPressEvent(QKeyEvent* event)
 
 void MyGLWidget::createBuffers () 
 {
-  // Dades de la caseta
+  /*// Dades de la caseta
   // Dos VBOs, un amb posició i l'altre amb color
   glm::vec3 posicio[5] = {
 	glm::vec3(-0.5, -1.0, 0.0),
@@ -131,8 +138,20 @@ void MyGLWidget::createBuffers ()
 
   // Activem l'atribut colorLoc
   glVertexAttribPointer(colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(colorLoc);
+  glEnableVertexAttribArray(colorLoc);*/
+  
 
+  
+  //Dades Model
+  
+  // Creació del Vertex Array Object per pintar
+  glGenVertexArrays(1, &VAO_Model);
+  glBindVertexArray(VAO_Model);
+  
+  glGenBuffers(1, &m.VBO_vertices(), VBO_CasaPos);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_CasaPos);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(posicio), posicio, GL_STATIC_DRAW);
+  
   // Dades del terra
   // Dos VBOs, un amb posició i l'altre amb color
   glm::vec3 posterra[4] = {
