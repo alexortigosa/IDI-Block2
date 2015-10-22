@@ -7,12 +7,14 @@ MyGLWidget::MyGLWidget (QGLFormat &f, QWidget* parent) : QGLWidget(f, parent)
 {
   setFocusPolicy(Qt::ClickFocus); // per rebre events de teclat
   scale = 1.0f;
+  FOV=((float)M_PI)/2.0f;
+  FOVC=FOV;
 }
 
 void MyGLWidget::projectTransform()
 {
     
-    glm::mat4 Proj = glm::perspective(((float)M_PI)/2.0f,1.0f,1.0f,3.0f);
+    glm::mat4 Proj = glm::perspective(FOVC,1.0f,1.0f,3.0f);
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, &Proj[0][0]);
 }
 
@@ -52,10 +54,18 @@ void MyGLWidget::paintGL ()
 
   
   // Activem el VAO per a pintar la caseta 
-  glBindVertexArray (VAO_Casa);
+  //glBindVertexArray (VAO_Casa);
 
   // pintem
-  glDrawArrays(GL_TRIANGLE_STRIP, 0, 5);
+  //glDrawArrays(GL_TRIANGLE_STRIP, 0, 5);
+
+  // Activem el VAO per a pintar la caseta 
+  glBindVertexArray (VAO_Model);
+
+  // pintem
+  glDrawArrays(GL_TRIANGLES, 0, m.faces().size()*3);
+
+
   
   // Activem el VAO per a pintar el terra 
   glBindVertexArray (VAO_Terra);
@@ -75,9 +85,16 @@ void MyGLWidget::modelTransform ()
   glUniformMatrix4fv(transLoc, 1, GL_FALSE, &transform[0][0]);
 }
 
+
 void MyGLWidget::resizeGL (int w, int h) 
 {
+  wGlobal=w;
+  hGlobal=h;
+  if(((double)w/(double)h)<1.0)
+    FOVC=2.0 * atan(tan(FOV)/(w/h));
+  else FOVC=FOV;
   glViewport(0, 0, w, h);
+  projectTransform();
 }
 
 void MyGLWidget::keyPressEvent(QKeyEvent* event) 
@@ -87,13 +104,13 @@ void MyGLWidget::keyPressEvent(QKeyEvent* event)
       exit(0);
     case Qt::Key_S: { // escalar a més gran
       scale += 0.05;
-      modelTransform ();
+      modelTransform();
       updateGL();
       break;
     }
     case Qt::Key_D: { // escalar a més petit
       scale -= 0.05;
-      modelTransform ();
+      modelTransform();
       updateGL();
       break;
     }
@@ -121,7 +138,7 @@ void MyGLWidget::createBuffers ()
   };
 
   // Creació del Vertex Array Object per pintar
-  glGenVertexArrays(1, &VAO_Casa);
+  /*glGenVertexArrays(1, &VAO_Casa);
   glBindVertexArray(VAO_Casa);
 
   glGenBuffers(1, &VBO_CasaPos);
@@ -138,19 +155,30 @@ void MyGLWidget::createBuffers ()
 
   // Activem l'atribut colorLoc
   glVertexAttribPointer(colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(colorLoc);
+  glEnableVertexAttribArray(colorLoc);*/
   
 
   
   //Dades Model
   
   // Creació del Vertex Array Object per pintar
-  /*glGenVertexArrays(1, &VAO_Model);
+  glGenVertexArrays(1, &VAO_Model);
   glBindVertexArray(VAO_Model);
   
-  glGenBuffers(1, &m.VBO_vertices(), VBO_CasaPos);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO_CasaPos);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(posicio), posicio, GL_STATIC_DRAW);*/
+  glGenBuffers(1, &VBO_ModelPos);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_ModelPos);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*m.faces().size()*3*3, m.VBO_vertices(), GL_STATIC_DRAW);
+
+  // Activem l'atribut vertexLoc
+  glVertexAttribPointer(vertexLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(vertexLoc);
+
+  glGenBuffers(1, &VBO_ModelCol);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_ModelCol);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*m.faces().size()*3*3, m.VBO_matdiff(), GL_STATIC_DRAW);
+
+  glVertexAttribPointer(colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(colorLoc);
   
   // Dades del terra
   // Dos VBOs, un amb posició i l'altre amb color

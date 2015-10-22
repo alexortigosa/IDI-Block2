@@ -35,22 +35,26 @@ class MyGLWidget : public QGLWidget {
     void createBuffers ();
     void carregaShaders ();
     void modelTransform ();
+    void modelTransformM ();
 
     // attribute locations
     GLuint vertexLoc, colorLoc;
     // uniform locations
     GLuint transLoc;
+    GLuint transLocM;
     GLuint projLoc;
     GLuint viewLoc;
     // VAO i VBO names
     GLuint VAO_Casa, VBO_CasaPos, VBO_CasaCol;
     GLuint VAO_Terra, VBO_TerraPos, VBO_TerraCol;
-    GLuint VAO_Model;
+    GLuint VAO_Model, VBO_ModelPos, VBO_ModelCol;
+    int wGlobal, hGlobal; 
     
     // Program
     QGLShaderProgram *program;
     // Internal vars
     float scale;
+    float FOV, FOVC;
     glm::vec3 pos;
     //Modelo
     Model m;

@@ -4,6 +4,7 @@ in vec3 vertex;
 in vec3 color;
 
 uniform mat4 TG;
+uniform mat4 TGM;
 uniform mat4 proj;
 uniform mat4 view;
 
