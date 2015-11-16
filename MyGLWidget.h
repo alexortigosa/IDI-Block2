@@ -29,6 +29,14 @@ class MyGLWidget : public QGLWidget {
     virtual void viewTransform();
     //carrega model
     virtual void carregaModel();
+    //calculo caja
+    virtual void calculo_caja(Model *m, glm::vec3 *centreModAux, float *scale);
+
+    virtual void mousePressEvent (QMouseEvent *e);
+
+    virtual void mouseReleaseEvent( QMouseEvent *);
+
+    virtual void mouseMoveEvent(QMouseEvent *e);
     
 
   private:
@@ -36,6 +44,7 @@ class MyGLWidget : public QGLWidget {
     void carregaShaders ();
     void modelTransform ();
     void modelTransformM ();
+    void doZoom (int cont); 
 
     // attribute locations
     GLuint vertexLoc, colorLoc;
@@ -48,15 +57,24 @@ class MyGLWidget : public QGLWidget {
     GLuint VAO_Casa, VBO_CasaPos, VBO_CasaCol;
     GLuint VAO_Terra, VBO_TerraPos, VBO_TerraCol;
     GLuint VAO_Model, VBO_ModelPos, VBO_ModelCol;
-    int wGlobal, hGlobal; 
-    
+    int wGlobal, hGlobal;
+    glm::vec3 centreMod; 
+    float scale1;
+    float h;
     // Program
     QGLShaderProgram *program;
     // Internal vars
-    float scale;
+    float scale,zNear,zFar;
+    double RadioSphere;
+    double distObs;
     float FOV, FOVC;
     glm::vec3 pos;
     //Modelo
     Model m;
+    typedef  enum {NONE, ROTATE} InteractiveAction;
+    InteractiveAction DoingInteractive;
+    int xClick, yClick;
+    float angleY;
+    float angleX;
 };
 
