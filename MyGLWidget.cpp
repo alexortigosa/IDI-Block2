@@ -13,7 +13,9 @@ MyGLWidget::MyGLWidget (QGLFormat &f, QWidget* parent) : QGLWidget(f, parent)
   h=1.0;
   xClick = yClick = 0;
   angleY = 0.0;
+  angleX = 0.0;
   DoingInteractive = NONE;
+  RadioSphere=2*sqrt(2);
   
 }
 
@@ -43,12 +45,12 @@ void MyGLWidget::calculo_caja(Model *m, glm::vec3 *centreModAux, float *scale){
   /*centreModAux[0]=(minx+maxx)/2.0;
   centreModAux[1]=(miny+maxy)/2.0;
   centreModAux[2]=(minz+maxz)/2.0;*/
-  *centreModAux = glm::vec3((minx+maxx)/2.0,(miny+maxy)/2.,(minz+maxz)/2.0);
+  *centreModAux = glm::vec3((minx+maxx)/2.0,miny,(minz+maxz)/2.0);
   /*if(RadioSphere<max(maxx-minx,max(maxy-miny,maxz-minz)))
     RadioSphere=max(maxx-minx,max(maxy-miny,maxz-minz));
     */
   *scale=h/(maxy-miny);
-  RadioSphere=max(maxx-minx,max(maxy-miny,maxz-minz));
+  //RadioSphere=max(maxx-minx,max(maxy-miny,maxz-minz));
   
     printf("%f\n",RadioSphere);
     printf("%f\n",maxx);
@@ -57,10 +59,10 @@ void MyGLWidget::calculo_caja(Model *m, glm::vec3 *centreModAux, float *scale){
     printf("%f\n",minx);
     printf("%f\n",miny);
     printf("%f\n",minz);
-    distObs=RadioSphere;
+    distObs=RadioSphere*2;
     
 
-    FOV=glm::degrees(glm::atan(h/(((float)distObs+(float)0.01-(float)RadioSphere)*2)));
+    FOV=glm::degrees(glm::atan(((float)2.0*(float)RadioSphere)/(((float)distObs-(float)RadioSphere)*2)));
     //FOV=((float)M_PI)/2.0f;
     FOVC=FOV;
 } 
@@ -85,7 +87,7 @@ void MyGLWidget::projectTransform()
       FOVC = glm::degrees(glm::atan(glm::tan(FOV)/ra));
       printf("Ya entra, angulo : %f y ra: %f\n",FOVC,ra);    
     }
-    glm::mat4 Proj = glm::perspective(FOVC,(float)ra,(float)distObs+(float)0.01-(float)RadioSphere,(float)distObs+(float)RadioSphere);
+    glm::mat4 Proj = glm::perspective(FOVC,(float)ra,(float)distObs-(float)RadioSphere,(float)distObs+(float)RadioSphere);
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, &Proj[0][0]);
 }
 
@@ -120,7 +122,6 @@ void MyGLWidget::initializeGL ()
   carregaModel();
   carregaShaders();
   createBuffers();
-  modelTransform ();
   projectTransform();
   viewTransform();
 }
@@ -141,15 +142,23 @@ void MyGLWidget::paintGL ()
   glBindVertexArray (VAO_Model);
 
   // pintem
+  modelTransform();
+  glDrawArrays(GL_TRIANGLES, 0, m.faces().size()*3);
+
+  // Activem el VAO per a pintar la caseta 
+  glBindVertexArray (VAO_Model2);
+
+  // pintem
+  modelTransform2();
   glDrawArrays(GL_TRIANGLES, 0, m.faces().size()*3);
 
 
   
   // Activem el VAO per a pintar el terra 
-  //glBindVertexArray (VAO_Terra);
-
+  glBindVertexArray (VAO_Terra);
+  terraTransform();
   // pintem
-  //glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 
   glBindVertexArray (0);
@@ -158,9 +167,27 @@ void MyGLWidget::paintGL ()
 void MyGLWidget::modelTransform () 
 {
   // Matriu de transformació de model
-  glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(scale));
+  glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(-1.,0.,-1.));
+  transform = glm::scale(transform, glm::vec3(scale1));
   transform = glm::translate(transform,-centreMod);
   //transform = glm::rotate(transform, .58f, glm::vec3(1.,0.,0.));
+  glUniformMatrix4fv(transLoc, 1, GL_FALSE, &transform[0][0]);
+}
+
+void MyGLWidget::modelTransform2 () 
+{
+  // Matriu de transformació de model
+  glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(1.,0.,1.));
+  transform = glm::rotate(transform, (float)M_PI, glm::vec3(0.,1.,0.));
+  transform = glm::scale(transform, glm::vec3(scale1));
+  transform = glm::translate(transform,-centreMod);
+  glUniformMatrix4fv(transLoc, 1, GL_FALSE, &transform[0][0]);
+}
+
+void MyGLWidget::terraTransform () 
+{
+  // Matriu de transformació de model
+  glm::mat4 transform = glm::mat4(1.0f);
   glUniformMatrix4fv(transLoc, 1, GL_FALSE, &transform[0][0]);
 }
 
@@ -190,18 +217,6 @@ void MyGLWidget::keyPressEvent(QKeyEvent* event)
   switch (event->key()) {
     case Qt::Key_Escape:
       exit(0);
-    case Qt::Key_S: { // escalar a més gran
-      scale += 0.05;
-      modelTransform();
-      updateGL();
-      break;
-    }
-    case Qt::Key_D: { // escalar a més petit
-      scale -= 0.05;
-      modelTransform();
-      updateGL();
-      break;
-    }
     case Qt::Key_Z: { // escalar a més petit
       doZoom(1);
       updateGL();
@@ -218,45 +233,6 @@ void MyGLWidget::keyPressEvent(QKeyEvent* event)
 
 void MyGLWidget::createBuffers () 
 {
-  // Dades de la caseta
-  // Dos VBOs, un amb posició i l'altre amb color
-  glm::vec3 posicio[5] = {
-	glm::vec3(-0.5, -1.0, 0.0),
-	glm::vec3( 0.5, -1.0, 0.0),
-	glm::vec3(-0.5,  0.0, 0.0),
-	glm::vec3( 0.5,  0.0, 0.0),
-	glm::vec3( 0.0,  0.6, 0.0)
-  }; 
-  glm::vec3 color[5] = {
-	glm::vec3(1,0,0),
-	glm::vec3(0,1,0),
-	glm::vec3(0,0,1),
-	glm::vec3(1,0,0),
-	glm::vec3(0,1,0)
-  };
-
-  // Creació del Vertex Array Object per pintar
-  /*glGenVertexArrays(1, &VAO_Casa);
-  glBindVertexArray(VAO_Casa);
-
-  glGenBuffers(1, &VBO_CasaPos);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO_CasaPos);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(posicio), posicio, GL_STATIC_DRAW);
-
-  // Activem l'atribut vertexLoc
-  glVertexAttribPointer(vertexLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(vertexLoc);
-
-  glGenBuffers(1, &VBO_CasaCol);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO_CasaCol);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(color), color, GL_STATIC_DRAW);
-
-  // Activem l'atribut colorLoc
-  glVertexAttribPointer(colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(colorLoc);*/
-  
-
-  
   //Dades Model
   
   // Creació del Vertex Array Object per pintar
@@ -278,13 +254,34 @@ void MyGLWidget::createBuffers ()
   glVertexAttribPointer(colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
   glEnableVertexAttribArray(colorLoc);
   
+//Dades Model
+  
+  // Creació del Vertex Array Object per pintar
+  glGenVertexArrays(1, &VAO_Model2);
+  glBindVertexArray(VAO_Model2);
+  
+  glGenBuffers(1, &VBO_ModelPos2);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_ModelPos2);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*m.faces().size()*3*3, m.VBO_vertices(), GL_STATIC_DRAW);
+
+  // Activem l'atribut vertexLoc
+  glVertexAttribPointer(vertexLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(vertexLoc);
+
+  glGenBuffers(1, &VBO_ModelCol2);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_ModelCol2);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*m.faces().size()*3*3, m.VBO_matdiff(), GL_STATIC_DRAW);
+
+  glVertexAttribPointer(colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(colorLoc);
+
   // Dades del terra
   // Dos VBOs, un amb posició i l'altre amb color
   glm::vec3 posterra[4] = {
-	glm::vec3(-1.0, -1.0, -1.0),
-	glm::vec3(-1.0, -1.0, 1.0),
-	glm::vec3(1.0, -1.0, -1.0),
-	glm::vec3(1.0, -1.0, 1.0)
+	glm::vec3(-2.0, 0.0, -2.0),
+	glm::vec3(-2.0, 0.0, 2.0),
+	glm::vec3(2.0, 0.0, -2.0),
+	glm::vec3(2.0, 0.0, 2.0)
   }; 
   glm::vec3 colterra[4] = {
 	glm::vec3(1,0,1),

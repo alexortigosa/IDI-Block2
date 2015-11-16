@@ -43,8 +43,9 @@ class MyGLWidget : public QGLWidget {
     void createBuffers ();
     void carregaShaders ();
     void modelTransform ();
-    void modelTransformM ();
+    void modelTransform2 ();
     void doZoom (int cont); 
+    void terraTransform (); 
 
     // attribute locations
     GLuint vertexLoc, colorLoc;
@@ -57,6 +58,7 @@ class MyGLWidget : public QGLWidget {
     GLuint VAO_Casa, VBO_CasaPos, VBO_CasaCol;
     GLuint VAO_Terra, VBO_TerraPos, VBO_TerraCol;
     GLuint VAO_Model, VBO_ModelPos, VBO_ModelCol;
+    GLuint VAO_Model2, VBO_ModelPos2, VBO_ModelCol2;
     int wGlobal, hGlobal;
     glm::vec3 centreMod; 
     float scale1;
